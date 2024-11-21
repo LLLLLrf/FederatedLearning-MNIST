@@ -1,4 +1,4 @@
-# Fedrated Learning - MNIST
+# Federated Learning - MNIST
 
 ## requirements
 
