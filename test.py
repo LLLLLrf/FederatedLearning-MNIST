@@ -9,8 +9,10 @@ from tqdm import tqdm
 # test path: mnist_test/0~9/xxx.png
 test_path = './mnist_test'
 model_root = './weights'
-model_name = 'model_best_25_19_57.pth'
+model_name = 'model_best_25_20_31.pth'
 model_path = os.path.join(model_root, model_name)
+
+print('load model from:', model_path)
 
 def test(model_path, test_path):
     model = torch.load(model_path)

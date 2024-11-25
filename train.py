@@ -11,7 +11,7 @@ def train():
     import time
     model="CNN"
     epochs = 30
-    batch_size = 16
+    batch_size = 32
     
     day = time.strftime("%d", time.localtime())
     time = time.strftime("%H_%M", time.localtime())
