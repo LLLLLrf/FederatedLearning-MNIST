@@ -24,6 +24,8 @@ def train():
     else:
         model = getattr(models, model)
     model=model.CNN(1, 10)
+
+    print('Current device:', torch.cuda.current_device())
     print('model:', model)
 
     # load data
@@ -55,9 +57,9 @@ def train():
                 best = loss.item()
                 torch.save(model, os.path.join(model_path, "model_best_{}_{}.pth".format(day, time)))
                 # print('\nmodel saved:', os.path.join(model_path, "model_best_{}_{}.pth".format(day, time)), 'loss:', loss.item())
+                
             # save latest model
             torch.save(model, os.path.join(model_path, "model_latest_{}_{}.pth".format(day, time)))
-                
             # print('epoch:', epoch, 'loss:', loss.item())
         
     torch.save(model, os.path.join(model_path, "model_latest_{}_{}.pth".format(day, time)))
