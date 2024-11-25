@@ -1,4 +1,6 @@
 tqdm
+kaggle
+matplotlib
 numpy
 struct
 opencv-python
