@@ -6,6 +6,7 @@
 - torch
 - opencv-python
 - matplotlib
+- numpy
 
 ## download dataset
 
@@ -26,4 +27,10 @@ python train_dataset.py
 
 ```bash
 python train.py
+```
+
+# test
+
+```bash
+python test.py
 ```
