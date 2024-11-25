@@ -8,7 +8,7 @@ from Dataset import MnistDataset
 # test path: mnist_test/0~9/xxx.png
 test_path = './mnist_test'
 model_root = './weights'
-model_name = 'model_best_25_19_13.pth'
+model_name = 'model_best_25_19_57.pth'
 model_path = os.path.join(model_root, model_name)
 
 import time
