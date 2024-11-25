@@ -4,6 +4,7 @@ import os
 import torch
 from torch.utils.data import DataLoader, Dataset
 from Dataset import MnistDataset
+from tqdm import tqdm
 
 # test path: mnist_test/0~9/xxx.png
 test_path = './mnist_test'
@@ -11,7 +12,6 @@ model_root = './weights'
 model_name = 'model_best_25_19_57.pth'
 model_path = os.path.join(model_root, model_name)
 
-import time
 def test(model_path, test_path):
     model = torch.load(model_path)
     model.eval()
@@ -20,12 +20,14 @@ def test(model_path, test_path):
     correct = 0
     total = 0
     with torch.no_grad():
-        for images, labels in test_loader:
-            images = images.unsqueeze(1).float()
-            outputs = model(images)
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+        with tqdm(total=len(test_loader)) as _tqdm:
+            for images, labels in test_loader:
+                images = images.unsqueeze(1).float()
+                outputs = model(images)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+                _tqdm.update(1)
     print('Accuracy of the model on the test images: %d %%' % (100 * correct / total))
 
 if __name__ == '__main__':
