@@ -9,13 +9,13 @@ from tqdm import tqdm
 # test path: mnist_test/0~9/xxx.png
 test_path = './mnist_test'
 model_root = './weights'
-model_name = 'model_latest_25_19_13.pth'
+model_name = 'model_latest_25_19_57.pth'
 model_path = os.path.join(model_root, model_name)
 
 print('load model from:', model_path)
 
 def test(model_path, test_path):
-    print('Current device:', torch.cuda.current_device())
+    # print('Current device:', torch.cuda.current_device())
     model = torch.load(model_path)
     model.eval()
     test_dataset = MnistDataset(test_path)
