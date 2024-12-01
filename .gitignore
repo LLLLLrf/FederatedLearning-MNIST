@@ -2,4 +2,4 @@ raw_data/
 mnist_test/
 mnist_train/
 weights/
-**.zip
+*.zip
