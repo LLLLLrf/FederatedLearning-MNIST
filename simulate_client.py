@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import Subset
+from Dataset import MnistDataset
 
 def split_data(dataset, num_clients):
     num_samples = len(dataset)
@@ -14,4 +15,4 @@ def split_data(dataset, num_clients):
     return clients
 
 num_clients = 5
-clients = split_data(MnistDataset(root='path_to_dataset'), num_clients)
+clients = split_data(MnistDataset(root='mnist_train'), num_clients)
