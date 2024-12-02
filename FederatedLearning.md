@@ -1,2 +1,15 @@
-Summary Task: Write a 500-word summary explaining the key components of federated 
-learning (client-server architecture, data privacy, and challenges like non-IID data).
+
+Federated learning is a decentralized approach to training machine learning models, particularly deep neural networks, while keeping the data localized on client devices such as mobile phones or laptops. The key components of federated learning include the client-server architecture, data privacy considerations, and challenges associated with non-independent and identically distributed (non-IID) data.
+
+Client-Server Architecture:
+In federated learning, a central server coordinates the training process among a large number of clients (e.g., mobile devices). Each client possesses a local dataset and performs local computations, such as stochastic gradient descent (SGD), to update the model. These updates are then sent back to the server, which aggregates them to improve the global model. This process is iterative; the updated global model is sent back to the clients, and the cycle repeats. The central server never has access to the raw data on the clients, only to the model updates.
+
+Data Privacy:
+One of the primary motivations for federated learning is to enhance data privacy. By keeping data on the client devices and only sharing model updates with the server, federated learning reduces the risk of privacy breaches associated with centralized data storage. This approach aligns with principles of data minimization and focused collection, as proposed in privacy frameworks like the 2012 White House report on consumer data privacy. The updates exchanged in federated learning are specific to model improvement and do not contain raw data, offering an additional layer of privacy protection.
+
+Challenges with Non-IID Data:
+A significant challenge in federated learning is the non-IID nature of data across clients. In practice, each client's dataset may differ substantially from others, both in distribution and size, reflecting individual usage patterns rather than a global data distribution. This can lead to issues such as model performance being biased towards the data distribution of the majority of clients. Federated learning algorithms must be robust enough to handle such data heterogeneity, ensuring that the global model generalizes well across all clients despite the non-IID data.
+
+To address these challenges, federated learning employs strategies like Federated Averaging (FedAvg), which combines local SGD on each client with server-side model averaging. Extensive empirical evaluations have shown that approaches like FedAvg are robust to unbalanced and non-IID data distributions and can significantly reduce the communication rounds needed to train a deep network on decentralized data.
+
+In summary, federated learning offers a promising framework for building shared models from decentralized data while respecting user privacy. It addresses the challenges of non-IID data through iterative model averaging and can be made practical with the right algorithms and sufficient computational resources on the client side.

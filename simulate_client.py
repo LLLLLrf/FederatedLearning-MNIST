@@ -1,4 +1,5 @@
 import torch
+from Dataset import MnistDataset
 from torch.utils.data import Subset
 from Dataset import MnistDataset
 
