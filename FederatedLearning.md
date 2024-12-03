@@ -1,4 +1,3 @@
-
 Federated learning is a decentralized approach to training machine learning models, particularly deep neural networks, while keeping the data localized on client devices such as mobile phones or laptops. The key components of federated learning include the client-server architecture, data privacy considerations, and challenges associated with non-independent and identically distributed (non-IID) data.
 
 Client-Server Architecture:
