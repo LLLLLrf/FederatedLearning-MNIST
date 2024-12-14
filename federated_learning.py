@@ -9,9 +9,9 @@ import os
 from collections import defaultdict
 import matplotlib.pyplot as plt
 
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-print('Current device:', torch.cuda.get_device_name(torch.cuda.current_device()))
+if torch.cuda.is_available():
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    print('Current device:', torch.cuda.get_device_name(torch.cuda.current_device()))
 
 def split_data(dataset, num_clients):
     num_samples = len(dataset)
@@ -26,34 +26,42 @@ def split_data(dataset, num_clients):
     return clients
 
 def split_data_non_iid(dataset, num_clients, num_classes=10, min_classes_per_client=1, max_classes_per_client=3):
-    # divide the dataset into non-IID groups based on the label
     label_to_indices = defaultdict(list)
     for idx, (_, label) in enumerate(dataset):
         label_to_indices[label].append(idx)
-    
-    # shuffle the order of samples in each label group
+
+    # Shuffle the data for each label
     for label in label_to_indices:
         random.shuffle(label_to_indices[label])
-    
-    # assign samples to clients
+
     clients = {i: [] for i in range(num_clients)}
     available_labels = list(range(num_classes))
-    
+
+    # Initial allocation to ensure each client gets data
     for client_id in range(num_clients):
-        # randomly decide the number of classes for the client
         num_classes_for_client = random.randint(min_classes_per_client, max_classes_per_client)
         assigned_labels = random.sample(available_labels, num_classes_for_client)
-        
+
         for label in assigned_labels:
-            num_samples_for_label = len(label_to_indices[label]) // (num_clients // num_classes_for_client)
-            clients[client_id].extend(label_to_indices[label][:num_samples_for_label])
-            label_to_indices[label] = label_to_indices[label][num_samples_for_label:]
-        
-    # convert to Subset objects
+            if label_to_indices[label]:  # Check if there is data left for the label
+                num_samples_for_label = max(1, len(label_to_indices[label]) // num_clients)
+                clients[client_id].extend(label_to_indices[label][:num_samples_for_label])
+                label_to_indices[label] = label_to_indices[label][num_samples_for_label:]
+
+    # Redistribute remaining data to clients with fewer samples
+    for label in available_labels:
+        while label_to_indices[label]:
+            for client_id in range(num_clients):
+                if not label_to_indices[label]:
+                    break
+                clients[client_id].append(label_to_indices[label].pop())
+
+    # Convert to Subset objects
     for client_id in clients:
         clients[client_id] = Subset(dataset, clients[client_id])
-    
+
     return clients
+
 
 def train_client(client_id, model, client_data, epochs=10, learning_rate=0.001, batch_size=32):
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
@@ -61,22 +69,30 @@ def train_client(client_id, model, client_data, epochs=10, learning_rate=0.001, 
     total_loss = 0.0
     correct = 0
     total = 0
+    num_batches = 0
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
 
     for epoch in range(epochs):
         for data, target in DataLoader(client_data, batch_size=batch_size, shuffle=True):
-            data = data.unsqueeze(0).float()
+            data, target = data.to(device), target.to(device)
+            data = data.float().view(-1, 1, 28, 28)  # Ensure correct input shape
             optimizer.zero_grad()
-            output = model(data.view(-1, 1, 28, 28))
+            output = model(data)
             loss = criterion(output, target)
             loss.backward()
             optimizer.step()
+
             total_loss += loss.item()
+            num_batches += 1
             # Accuracy calculation
             _, predicted = torch.max(output, 1)
             correct += (predicted == target).sum().item()
             total += target.size(0)
 
-    avg_loss = total_loss / (len(client_data) // batch_size)  # Average loss per batch
+    avg_loss = total_loss / len(DataLoader(client_data, batch_size=batch_size))
+
     accuracy = 100 * correct / total if total > 0 else 0.0
     print(f"Client {client_id} - Loss: {avg_loss:.6f} - Accuracy: {accuracy:.2f}%")
     
@@ -91,9 +107,22 @@ def aggregate_models(models, weights):
         averaged_model[key] /= sum(weights)
     return averaged_model
 
-def fed_avg(Model, models, clients, epochs=10, learning_rate=0.001, num_rounds=10, batch_size=32):
-    global_model = Model.CNN(1, 10)
+def fed_avg(Model, model_name, models, model_path, clients, cfg, epochs=1, learning_rate=0.001, num_rounds=10, batch_size=32):
+    if model_name=="LeNet5":
+        global_model = Model.LeNet5(1, 10)
+    elif model_name=="CNN":
+        global_model = Model.CNN(1, 10)
+    else:
+        print("Model not found")
+        return
     global_state_dict = global_model.state_dict()
+    avg_losses = []
+    avg_accuracies = []
+    
+    day = cfg['day']
+    time_now = cfg['time_now']
+    mode = cfg['mode']
+    num_clients = cfg['num_clients']
 
     for round in range(num_rounds):
         print(f"Round {round + 1}/{num_rounds}")
@@ -101,19 +130,21 @@ def fed_avg(Model, models, clients, epochs=10, learning_rate=0.001, num_rounds=1
         client_weights = []
         round_losses = []
         round_accuracies = []
-        avg_losses = []
-        avg_accuracies = []
-        
+
         for client_id, client_data in clients.items():
             if len(client_data) == 0:
                 print(f"Warning: Client {client_id} has no data.")
                 continue
-            
-            model = Model.CNN(1, 10)
+            if model_name=="LeNet5":
+                model = Model.LeNet5(1, 10)
+            elif model_name=="CNN":
+                model = Model.CNN(1, 10)
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            model.to(device)
             model.load_state_dict(global_state_dict)
-            # send initail weights to client
+            # send initial weights to client
             # train on the client and collect metrics
-            state_dict, client_loss, client_accuracy = train_client(client_id, model, client_data, epochs, learning_rate)
+            state_dict, client_loss, client_accuracy = train_client(client_id, model, client_data, epochs, learning_rate, batch_size)
             model_weights.append(state_dict)
             client_weights.append(len(client_data))
             round_losses.append(client_loss)
@@ -167,7 +198,7 @@ def fed_avg(Model, models, clients, epochs=10, learning_rate=0.001, num_rounds=1
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig("training_metrics_over_rounds.png")
+    plt.savefig(os.path.join("results", f"fed_{mode}_{num_clients}clients_{day}_{time_now}.png"))
     plt.show()
 
     return global_model
@@ -177,9 +208,12 @@ def evaluate_model(model, test_data):
     correct = 0
     total = 0
     with torch.no_grad():
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model.to(device)
         for data, target in test_data:
-            data = data.unsqueeze(0).float()
-            output = model(data.view(-1, 1, 28, 28))
+            data, target = data.to(device), target.to(device)
+            data = data.float().view(-1, 1, 28, 28)
+            output = model(data)
             _, predicted = torch.max(output, 1)
             total += target.size(0)
             correct += (predicted == target).sum().item()
@@ -188,21 +222,50 @@ def evaluate_model(model, test_data):
     print(f'Accuracy of the model on the test images: {accuracy}%')
     return accuracy
 
+def draw_dataset_distribution(clients):
+    plt.figure(figsize=(10, 6))
+    for client_id, client_data in clients.items():
+        if len(client_data) == 0:
+            continue
+        loader = DataLoader(client_data, batch_size=len(client_data))
+        for data, labels in loader:
+            plt.hist(labels.numpy(), bins=range(11), alpha=0.5, label=f'Client {client_id}')
+
+    plt.title('Dataset Distribution Among Clients')
+    plt.xlabel('Label')
+    plt.ylabel('Number of Samples')
+    plt.xticks(range(10))
+    plt.legend()
+    plt.savefig('dataset_distribution.png')
+
 if __name__ == "__main__":
     day = time.strftime("%d", time.localtime())
-    time = time.strftime("%H_%M", time.localtime())
+    time_now = time.strftime("%H_%M", time.localtime())
     
     model_path = "weights"
-    mode = "non-IID"
+    mode = "IID"
+    print("running {} mode...".format(mode))
     
     dataset = MnistDataset(root='mnist_train')
     model = "CNN"
     Model = getattr(models, model)
-    num_clients = 5
+    num_clients = 15
     epochs = 1
     num_rounds = 30
-    learning_rate = 0.0001
-    batch_size = 32
+    learning_rate = 0.001
+    batch_size = 64
+        
+    cfg = {}
+    cfg["mode"]=mode
+    cfg["num_clients"]=num_clients
+    cfg["model"]=model
+    cfg["epochs"]=epochs
+    cfg["num_rounds"]=num_rounds
+    cfg["learning_rate"]=learning_rate
+    cfg["batch_size"]=batch_size
+    cfg["day"]=day
+    cfg["time_now"]=time_now
+
     
     if mode == "IID":
         clients = split_data(dataset, num_clients)
@@ -211,12 +274,17 @@ if __name__ == "__main__":
     else:
         raise ValueError("Invalid mode. Please choose IID or non-IID.")
     
-    global_model = fed_avg(Model, [Model.CNN(1, 10) for _ in clients], clients, epochs, learning_rate, num_rounds, batch_size)
+    draw_dataset_distribution(clients)
+    if model == "LeNet5":
+        global_model = fed_avg(Model, model, [Model.LeNet5(1, 10) for _ in clients], model_path, clients, cfg, epochs, learning_rate, num_rounds, batch_size)
+    elif model == "CNN":
+        global_model = fed_avg(Model, model, [Model.CNN(1, 10) for _ in clients], model_path, clients, cfg, epochs, learning_rate, num_rounds, batch_size)
 
     # save the global model
-    torch.save(global_model.state_dict(), os.path.join(model_path,'fed_global_model_{}_{}.pt'.format(day, time)))
-    print("model saved to {}".format(os.path.join(model_path,'fed_global_model_{}_{}.pt'.format(day, time))))
+    torch.save(global_model.state_dict(), os.path.join(model_path,'fed_global_model_{}_{}.pth'.format(day, time_now)))
+    print("model saved to {}".format(os.path.join(model_path,'fed_global_model_{}_{}.pth'.format(day, time_now))))
 
-    test_data = DataLoader(MnistDataset(root='mnist_test'), batch_size=32, shuffle=False)
+    print("Running test...")
+    test_data = DataLoader(MnistDataset(root='mnist_test'), batch_size=1, shuffle=False)
     evaluate_model(global_model, test_data)
     
