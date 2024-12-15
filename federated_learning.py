@@ -243,13 +243,13 @@ if __name__ == "__main__":
     time_now = time.strftime("%H_%M", time.localtime())
     
     model_path = "weights"
-    mode = "IID"
+    mode = "non-IID"
     print("running {} mode...".format(mode))
     
     dataset = MnistDataset(root='mnist_train')
     model = "CNN"
     Model = getattr(models, model)
-    num_clients = 15
+    num_clients = 20
     epochs = 1
     num_rounds = 30
     learning_rate = 0.001
