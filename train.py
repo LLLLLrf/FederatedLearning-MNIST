@@ -8,12 +8,14 @@ from tqdm import tqdm
 import models
 from Dataset import MnistDataset
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 
 
 def train(model_root):
     import time
-    model = "CNN"
+    
+    # You can change the configs and hyperparameters here
+    model_name = "CNN"
     epochs = 30
     batch_size = 64
     lr = 0.001
@@ -22,12 +24,16 @@ def train(model_root):
     time_now = time.strftime("%H_%M", time.localtime())
     
     # load model if exists
-    model_name = 'model_best.pth'
-    if os.path.exists(os.path.join(model_root, model_name)):
+    model_load = 'model_best.pth'
+    if os.path.exists(os.path.join(model_root, model_load)):
         model = torch.load(model_root)
     else:
-        model = getattr(models, model)
-    model=model.CNN(1, 10)
+        model = getattr(models, model_name)
+    
+    if model_name = "CNN":
+        model=model.CNN(1, 10)
+    elif model_name == "LeNet5":
+        model = model.LeNet5(1, 10)
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)

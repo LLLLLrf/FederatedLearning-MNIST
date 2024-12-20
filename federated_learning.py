@@ -242,10 +242,9 @@ if __name__ == "__main__":
     day = time.strftime("%d", time.localtime())
     time_now = time.strftime("%H_%M", time.localtime())
     
+    # You can change the configs and hyperparameters here
     model_path = "weights"
-    mode = "non-IID"
-    print("running {} mode...".format(mode))
-    
+    mode = "non-IID" # IID/non-IID
     dataset = MnistDataset(root='mnist_train')
     model = "CNN"
     Model = getattr(models, model)
@@ -266,6 +265,7 @@ if __name__ == "__main__":
     cfg["day"]=day
     cfg["time_now"]=time_now
 
+    print("running {} mode...".format(mode))
     
     if mode == "IID":
         clients = split_data(dataset, num_clients)

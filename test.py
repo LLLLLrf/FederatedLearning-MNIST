@@ -8,7 +8,7 @@ from tqdm import tqdm
 import models
 import time
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 # test path: mnist_test/0~9/xxx.png
 test_path = './mnist_test'
