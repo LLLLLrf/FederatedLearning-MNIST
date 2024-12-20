@@ -10,7 +10,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 if torch.cuda.is_available():
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     print('Current device:', torch.cuda.get_device_name(torch.cuda.current_device()))
 
 def split_data(dataset, num_clients):
@@ -25,7 +25,7 @@ def split_data(dataset, num_clients):
 
     return clients
 
-def split_data_non_iid(dataset, num_clients, num_classes=10, min_classes_per_client=1, max_classes_per_client=3):
+def split_data_non_iid(dataset, num_clients, num_classes=10, min_classes_per_client=1, max_classes_per_client=10):
     label_to_indices = defaultdict(list)
     for idx, (_, label) in enumerate(dataset):
         label_to_indices[label].append(idx)

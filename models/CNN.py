@@ -25,9 +25,15 @@ class CNN(torch.nn.Module):
 
 
 if __name__ == '__main__':
-    model = CNN(3, 10)
+    model = CNN(1, 10)
     print(model)
-    x = torch.randn((1, 3, 28, 28))
+    x = torch.randn((1, 1, 28, 28))
     y = model(x)
     print(y.shape)
     print(y)
+    
+
+    from torchviz import make_dot
+    dot = make_dot(y, params=dict(model.named_parameters()))
+
+    dot.render('cnn_model_simplified', format='png', cleanup=True)
