@@ -274,7 +274,7 @@ if __name__ == "__main__":
     else:
         raise ValueError("Invalid mode. Please choose IID or non-IID.")
     
-    draw_dataset_distribution(clients)
+    # draw_dataset_distribution(clients)
     if model == "LeNet5":
         global_model = fed_avg(Model, model, [Model.LeNet5(1, 10) for _ in clients], model_path, clients, cfg, epochs, learning_rate, num_rounds, batch_size)
     elif model == "CNN":
