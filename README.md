@@ -19,8 +19,8 @@ unzip mnist-dataset.zip -d raw_data
 ## Data Preprocess
 
 ```bash
-python test_dataset.py
-python train_dataset.py
+python test_dataset_preprocess.py
+python train_dataset_preprocess.py
 ```
 
 ## Train
